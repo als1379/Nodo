@@ -24,6 +24,7 @@ var (
 
 type User struct {
 	ID        string    `json:"id"`
+	Username  string    `json:"username,omitempty"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -73,10 +74,11 @@ func (s *Service) Register(ctx context.Context, email, password string) (Result,
 	return result, nil
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (Result, error) {
+func (s *Service) Login(ctx context.Context, login, password string) (Result, error) {
 	var user User
 	var passwordHash string
-	err := s.db.QueryRow(ctx, `SELECT id,email,password_hash,created_at FROM users WHERE email=$1`, normalizeEmail(email)).Scan(&user.ID, &user.Email, &passwordHash, &user.CreatedAt)
+	login = strings.ToLower(strings.TrimSpace(login))
+	err := s.db.QueryRow(ctx, `SELECT id,COALESCE(username,''),email,password_hash,created_at FROM users WHERE email=$1 OR username=$1`, login).Scan(&user.ID, &user.Username, &user.Email, &passwordHash, &user.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Keep unknown-user logins close to the cost of a normal password check.
 		_ = bcrypt.CompareHashAndPassword([]byte("$2a$10$7EqJtq98hPqEX7fNZaFWoO5UGew8QSOXhY9Qd7P1dW8hWrX1G9G7e"), []byte(password))
@@ -94,7 +96,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (Result, er
 func (s *Service) Authenticate(ctx context.Context, token string) (User, error) {
 	var user User
 	sum := sha256.Sum256([]byte(token))
-	err := s.db.QueryRow(ctx, `SELECT u.id,u.email,u.created_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()`, sum[:]).Scan(&user.ID, &user.Email, &user.CreatedAt)
+	err := s.db.QueryRow(ctx, `SELECT u.id,COALESCE(u.username,''),u.email,u.created_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()`, sum[:]).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrInvalidToken
 	}

@@ -12,10 +12,11 @@ func TestValidateCredentials(t *testing.T) {
 		strong bool
 		want   string
 	}{
-		{"valid registration", credentials{"person@example.com", "long-password"}, true, ""},
-		{"invalid email", credentials{"invalid", "long-password"}, true, "a valid email is required"},
-		{"short registration password", credentials{"person@example.com", "short"}, true, "password must be between 10 and 72 characters"},
-		{"empty login password", credentials{"person@example.com", ""}, false, "password is required"},
+		{"valid registration", credentials{Email: "person@example.com", Password: "long-password"}, true, ""},
+		{"invalid email", credentials{Email: "invalid", Password: "long-password"}, true, "a valid email is required"},
+		{"short registration password", credentials{Email: "person@example.com", Password: "short"}, true, "password must be between 10 and 72 characters"},
+		{"valid username login", credentials{Login: "admin", Password: "ali"}, false, ""},
+		{"empty login password", credentials{Login: "admin"}, false, "password is required"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -52,7 +52,7 @@ func (h *HTTP) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, msg)
 		return
 	}
-	result, err := h.service.Login(r.Context(), input.Email, input.Password)
+	result, err := h.service.Login(r.Context(), input.login(), input.Password)
 	if errors.Is(err, ErrInvalidCredentials) {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
@@ -97,6 +97,7 @@ func (h *HTTP) RequireAuth(next http.Handler) http.Handler {
 }
 
 type credentials struct {
+	Login    string `json:"login"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -114,8 +115,11 @@ func decodeCredentials(w http.ResponseWriter, r *http.Request) (credentials, boo
 	return input, true
 }
 func validateCredentials(c credentials, strong bool) string {
-	if !strings.Contains(c.Email, "@") || len(c.Email) > 254 {
+	if strong && (!strings.Contains(c.Email, "@") || len(c.Email) > 254) {
 		return "a valid email is required"
+	}
+	if !strong && c.login() == "" {
+		return "login is required"
 	}
 	if strong && (len(c.Password) < 10 || len(c.Password) > 72) {
 		return "password must be between 10 and 72 characters"
@@ -124,6 +128,12 @@ func validateCredentials(c credentials, strong bool) string {
 		return "password is required"
 	}
 	return ""
+}
+func (c credentials) login() string {
+	if strings.TrimSpace(c.Login) != "" {
+		return c.Login
+	}
+	return c.Email
 }
 func bearerToken(r *http.Request) string {
 	p := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
