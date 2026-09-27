@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: e70a317f-edb9-45d3-b632-0a30bbb96edf
+
+cloudResources:
+  collections:
+    ..\postman\collections\Nodo API: b282273c-3a81-41ed-b039-6c075b61ddb2
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

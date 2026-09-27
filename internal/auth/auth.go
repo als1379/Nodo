@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -38,10 +37,11 @@ type Result struct {
 type Service struct {
 	db         *pgxpool.Pool
 	sessionTTL time.Duration
+	jwt        *JWT
 }
 
-func NewService(db *pgxpool.Pool, sessionTTL time.Duration) *Service {
-	return &Service{db: db, sessionTTL: sessionTTL}
+func NewService(db *pgxpool.Pool, sessionTTL time.Duration, jwt *JWT) *Service {
+	return &Service{db: db, sessionTTL: sessionTTL, jwt: jwt}
 }
 
 func (s *Service) Register(ctx context.Context, email, password string) (Result, error) {
@@ -64,7 +64,7 @@ func (s *Service) Register(ctx context.Context, email, password string) (Result,
 		}
 		return Result{}, err
 	}
-	result, err := createSession(ctx, tx, user, s.sessionTTL)
+	result, err := s.createSession(ctx, tx, user)
 	if err != nil {
 		return Result{}, err
 	}
@@ -90,13 +90,17 @@ func (s *Service) Login(ctx context.Context, login, password string) (Result, er
 	if bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)) != nil {
 		return Result{}, ErrInvalidCredentials
 	}
-	return createSession(ctx, s.db, user, s.sessionTTL)
+	return s.createSession(ctx, s.db, user)
 }
 
 func (s *Service) Authenticate(ctx context.Context, token string) (User, error) {
+	claims, err := s.jwt.Verify(token)
+	if err != nil {
+		return User{}, ErrInvalidToken
+	}
 	var user User
 	sum := sha256.Sum256([]byte(token))
-	err := s.db.QueryRow(ctx, `SELECT u.id,COALESCE(u.username,''),u.email,u.created_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()`, sum[:]).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
+	err = s.db.QueryRow(ctx, `SELECT u.id,COALESCE(u.username,''),u.email,u.created_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.id=$1 AND s.user_id=$2 AND s.token_hash=$3 AND s.expires_at>now()`, claims.SessionID, claims.Subject, sum[:]).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, ErrInvalidToken
 	}
@@ -113,16 +117,15 @@ type dbtx interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
 }
 
-func createSession(ctx context.Context, db dbtx, user User, ttl time.Duration) (Result, error) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
+func (s *Service) createSession(ctx context.Context, db dbtx, user User) (Result, error) {
+	id := newUUID()
+	expires := time.Now().UTC().Add(s.sessionTTL)
+	token, err := s.jwt.Sign(user.ID, id, expires)
+	if err != nil {
 		return Result{}, err
 	}
-	token := base64.RawURLEncoding.EncodeToString(raw)
 	sum := sha256.Sum256([]byte(token))
-	expires := time.Now().UTC().Add(ttl)
-	var id string
-	err := db.QueryRow(ctx, `INSERT INTO sessions(id,user_id,token_hash,expires_at) VALUES($1,$2,$3,$4) RETURNING id`, newUUID(), user.ID, sum[:], expires).Scan(&id)
+	err = db.QueryRow(ctx, `INSERT INTO sessions(id,user_id,token_hash,expires_at) VALUES($1,$2,$3,$4) RETURNING id`, id, user.ID, sum[:], expires).Scan(&id)
 	if err != nil {
 		return Result{}, err
 	}

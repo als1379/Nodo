@@ -1,4 +1,34 @@
 services:
+  api:
+    build:
+      context: .
+    environment:
+      APP_ENV: development
+      HTTP_ADDR: :8080
+      DATABASE_URL: postgres://nodo:nodo@postgres:5432/nodo?sslmode=disable
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/free}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      NODO_API_URL: /api
+      API_UPSTREAM: http://api:8080
+      NGINX_ENVSUBST_FILTER: API_UPSTREAM
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
   postgres:
     image: postgres:17-alpine
     environment:
@@ -14,6 +44,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
 
 volumes:
   postgres_data:

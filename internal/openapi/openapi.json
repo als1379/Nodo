@@ -1,0 +1,194 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nodo API",
+    "version": "0.1.0",
+    "description": "REST API for Nodo authentication and vocabulary quizzes."
+  },
+  "servers": [
+    { "url": "/api", "description": "Frontend proxy" },
+    { "url": "http://localhost:8080", "description": "Direct local API" }
+  ],
+  "tags": [
+    { "name": "System" },
+    { "name": "Authentication" },
+    { "name": "Quiz" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "operationId": "getHealth",
+        "summary": "Check API and database health",
+        "responses": {
+          "200": { "description": "Service is healthy", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } } },
+          "503": { "description": "Database is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } } }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "register",
+        "summary": "Create an account",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } } } },
+        "responses": {
+          "201": { "description": "Account created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResult" } } } },
+          "409": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "login",
+        "summary": "Log in with an email or username",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
+        "responses": {
+          "200": { "description": "Login successful", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResult" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "operationId": "getCurrentUser",
+        "summary": "Get the authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Current user", "content": { "application/json": { "schema": { "type": "object", "required": ["user"], "properties": { "user": { "$ref": "#/components/schemas/User" } } } } } },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "logout",
+        "summary": "Revoke the current JWT session",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Logged out" },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/quiz/word": {
+      "get": {
+        "tags": ["Quiz"],
+        "operationId": "getWordQuestion",
+        "summary": "Generate a word-meaning question",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Generated question", "content": { "application/json": { "schema": { "type": "object", "required": ["question"], "properties": { "question": { "$ref": "#/components/schemas/Question" } } } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "502": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/quiz/word/{id}/answer": {
+      "post": {
+        "tags": ["Quiz"],
+        "operationId": "answerWordQuestion",
+        "summary": "Check a word-question answer",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Question ID returned by getWordQuestion" }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnswerRequest" } } } },
+        "responses": {
+          "200": { "description": "Answer result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnswerResult" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": ["status"],
+        "properties": { "status": { "type": "string", "examples": ["ok"] } }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "examples": ["user@example.com"] },
+          "password": { "type": "string", "format": "password", "minLength": 10, "maxLength": 72, "examples": ["a-secure-password"] }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["login", "password"],
+        "properties": {
+          "login": { "type": "string", "examples": ["admin"] },
+          "password": { "type": "string", "format": "password", "examples": ["ali"] }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AuthResult": {
+        "type": "object",
+        "required": ["user", "token", "expires_at"],
+        "properties": {
+          "user": { "$ref": "#/components/schemas/User" },
+          "token": { "type": "string", "description": "Signed HS256 JWT" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "required": ["id", "word", "options"],
+        "properties": {
+          "id": { "type": "string" },
+          "word": { "type": "string" },
+          "options": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "string" } }
+        }
+      },
+      "AnswerRequest": {
+        "type": "object",
+        "required": ["option"],
+        "properties": { "option": { "type": "integer", "minimum": 0, "maximum": 3, "examples": [0] } }
+      },
+      "AnswerResult": {
+        "type": "object",
+        "required": ["correct", "correct_answer"],
+        "properties": {
+          "correct": { "type": "boolean" },
+          "correct_answer": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["message"],
+            "properties": { "message": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Error": { "description": "Error response", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  }
+}

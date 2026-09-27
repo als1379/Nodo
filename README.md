@@ -4,14 +4,14 @@ Base REST API for Nodo, written in Go with PostgreSQL authentication.
 
 ## Run locally
 
-Requirements: Go 1.26+ and Docker.
+Requirements: Docker. Copy the environment template and add your OpenRouter key:
 
 ```sh
 cp .env.example .env
-docker compose up -d postgres
+docker compose up --build
 ```
 
-Load the variables from `.env`, then start the server. In PowerShell:
+The frontend is available at `http://localhost:5173`; it proxies API calls to the Go container over Docker's internal network. For backend-only development, load the variables from `.env` and run Go directly:
 
 ```powershell
 Get-Content .env | ForEach-Object {
@@ -33,7 +33,7 @@ curl -X POST http://localhost:8080/v1/auth/register \
   -d '{"email":"user@example.com","password":"a-secure-password"}'
 ```
 
-Login uses the same JSON shape at `POST /v1/auth/login`. Both endpoints return an opaque session token. Send it on authenticated requests:
+Login accepts `login` and `password` at `POST /v1/auth/login`. Registration and login return a signed HS256 JWT. Send it on authenticated requests:
 
 ```sh
 curl http://localhost:8080/v1/auth/me \
@@ -41,6 +41,28 @@ curl http://localhost:8080/v1/auth/me \
 ```
 
 `POST /v1/auth/logout` invalidates the current token. `GET /health` checks service and database availability.
+
+The OpenAPI 3.1 specification is available at `GET /openapi.json`, or through the frontend proxy at `GET /api/openapi.json`.
+
+## Word quiz
+
+Set `OPENROUTER_API_KEY` in your local `.env`. `OPENROUTER_MODEL` defaults to the free-model router `openrouter/free`.
+
+Get a question:
+
+```sh
+curl http://localhost:8080/v1/quiz/word
+```
+
+Answer using the question ID and a zero-based option number. The response says whether the choice was correct; request the question endpoint again for the next word:
+
+```sh
+curl -X POST http://localhost:8080/v1/quiz/word/QUESTION_ID/answer \
+  -H "Content-Type: application/json" \
+  -d '{"option":0}'
+```
+
+Questions and answers are held in memory and disappear when the API restarts.
 
 ## Commands
 

@@ -8,14 +8,18 @@ import (
 )
 
 type Config struct {
-	Environment   string
-	HTTPAddr      string
-	DatabaseURL   string
-	SessionTTL    time.Duration
-	DBMaxConns    int32
-	DBMinConns    int32
-	DBMaxLifetime time.Duration
-	DBMaxIdleTime time.Duration
+	Environment      string
+	HTTPAddr         string
+	DatabaseURL      string
+	SessionTTL       time.Duration
+	DBMaxConns       int32
+	DBMinConns       int32
+	DBMaxLifetime    time.Duration
+	DBMaxIdleTime    time.Duration
+	OpenRouterAPIKey string
+	OpenRouterModel  string
+	FrontendOrigin   string
+	JWTSecret        string
 }
 
 func Load() (Config, error) {
@@ -26,8 +30,15 @@ func Load() (Config, error) {
 	cfg.Environment = env("APP_ENV", cfg.Environment)
 	cfg.HTTPAddr = env("HTTP_ADDR", cfg.HTTPAddr)
 	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
+	cfg.OpenRouterAPIKey = os.Getenv("OPENROUTER_API_KEY")
+	cfg.OpenRouterModel = env("OPENROUTER_MODEL", "openrouter/free")
+	cfg.FrontendOrigin = env("FRONTEND_ORIGIN", "http://localhost:5173")
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
+	}
+	if len(cfg.JWTSecret) < 32 {
+		return Config{}, fmt.Errorf("JWT_SECRET must be at least 32 characters")
 	}
 
 	var err error
