@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A quick vocabulary quiz powered by Nodo.">
-  <title>Nodo - Word Quiz</title>
+  <meta name="description" content="Learner-focused Italian dictionary lessons powered by Nodo.">
+  <title>Nodo - Italian Dictionary</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,11 +13,10 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true">N</span><span>Nodo</span></div>
       <div id="account" class="account" hidden><span id="account-name"></span><button id="logout" class="text-button" type="button">Log out</button></div>
     </header>
-
     <section id="auth-view" class="auth-card" aria-labelledby="auth-title">
       <p class="eyebrow">Welcome to Nodo</p>
-      <h1 id="auth-title">Sign in to keep learning</h1>
-      <p class="auth-copy">A fresh word and four possible meanings are waiting for you.</p>
+      <h1 id="auth-title">Sign in to learn Italian</h1>
+      <p class="auth-copy">Look up a word and get a practical lesson built from dictionary evidence.</p>
       <div class="auth-tabs" role="tablist" aria-label="Authentication">
         <button id="login-tab" class="auth-tab active" type="button" role="tab" aria-selected="true">Log in</button>
         <button id="register-tab" class="auth-tab" type="button" role="tab" aria-selected="false">Create account</button>
@@ -32,18 +31,16 @@
         <button id="auth-submit" class="primary" type="submit">Log in</button>
       </form>
     </section>
-
-    <section id="quiz-view" class="quiz" aria-labelledby="quiz-title" hidden>
-      <p class="eyebrow">Word of the moment</p>
-      <h1 id="quiz-title">What does this word mean?</h1>
-      <div id="loading" class="state" role="status"><span class="spinner" aria-hidden="true"></span>Finding a word...</div>
-      <div id="error" class="state error" role="alert" hidden><p id="error-message">Could not load a question.</p><button id="retry" class="secondary" type="button">Try again</button></div>
-      <div id="question" hidden>
-        <p id="word" class="word"></p>
-        <div id="options" class="options" role="group" aria-label="Possible meanings"></div>
-        <div id="feedback" class="feedback" aria-live="polite" hidden></div>
-        <button id="next" class="next" type="button" hidden>Next word <span aria-hidden="true">-&gt;</span></button>
-      </div>
+    <section id="dictionary-view" class="dictionary" aria-labelledby="dictionary-title" hidden>
+      <p class="eyebrow">Italian learner dictionary</p>
+      <h1 id="dictionary-title">What word do you want to learn?</h1>
+      <form id="word-search-form" class="word-search">
+        <label for="word-search-input">Italian word</label>
+        <div><input id="word-search-input" autocomplete="off" placeholder="e.g. andare" required maxlength="80"><button type="submit">Build lesson</button></div>
+      </form>
+      <div id="lookup-loading" class="state" role="status" hidden><span class="spinner" aria-hidden="true"></span>Building your lesson...</div>
+      <div id="lookup-error" class="state error" role="alert" hidden></div>
+      <div id="lookup-details" class="word-details" hidden></div>
     </section>
     <footer>Learn one word at a time.</footer>
   </main>

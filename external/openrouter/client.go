@@ -22,18 +22,43 @@ func New(apiKey, model string, httpClient *http.Client) *Client {
 }
 
 func (c *Client) CompleteJSON(ctx context.Context, systemPrompt, userPrompt string) ([]byte, error) {
+	return c.completeJSON(ctx, systemPrompt, userPrompt, map[string]any{"type": "json_object"})
+}
+
+func (c *Client) CompleteJSONSchema(ctx context.Context, systemPrompt, userPrompt, name string, schema map[string]any) ([]byte, error) {
+	return c.completeJSON(ctx, systemPrompt, userPrompt, map[string]any{
+		"type":        "json_schema",
+		"json_schema": map[string]any{"name": name, "strict": true, "schema": schema},
+	})
+}
+
+func (c *Client) completeJSON(ctx context.Context, systemPrompt, userPrompt string, responseFormat map[string]any) ([]byte, error) {
 	if c.apiKey == "" {
 		return nil, errors.New("OPENROUTER_API_KEY is not configured")
 	}
+	var lastErr error
+	for _, model := range strings.Split(c.model, ",") {
+		content, err := c.completeModel(ctx, strings.TrimSpace(model), systemPrompt, userPrompt, responseFormat)
+		if err == nil {
+			return content, nil
+		}
+		lastErr = err
+	}
+	return nil, lastErr
+}
+
+func (c *Client) completeModel(ctx context.Context, model, systemPrompt, userPrompt string, responseFormat map[string]any) ([]byte, error) {
 	payload := map[string]any{
-		"model": c.model,
+		"model": model,
 		"messages": []map[string]string{
 			{"role": "system", "content": systemPrompt},
 			{"role": "user", "content": userPrompt},
 		},
-		"response_format": map[string]string{"type": "json_object"},
-		"temperature":     0.8,
-		"max_tokens":      800,
+		"response_format": responseFormat,
+		"provider":        map[string]any{"require_parameters": true, "allow_fallbacks": true},
+		"reasoning":       map[string]string{"effort": "minimal"},
+		"temperature":     0.2,
+		"max_tokens":      4000,
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -61,7 +86,8 @@ func (c *Client) CompleteJSON(ctx context.Context, systemPrompt, userPrompt stri
 	}
 	var completion struct {
 		Choices []struct {
-			Message struct {
+			FinishReason string `json:"finish_reason"`
+			Message      struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
@@ -71,6 +97,9 @@ func (c *Client) CompleteJSON(ctx context.Context, systemPrompt, userPrompt stri
 	}
 	if len(completion.Choices) == 0 {
 		return nil, errors.New("OpenRouter returned no choices")
+	}
+	if reason := completion.Choices[0].FinishReason; reason != "" && reason != "stop" {
+		return nil, fmt.Errorf("OpenRouter completion ended with finish_reason %q", reason)
 	}
 	content := strings.TrimSpace(completion.Choices[0].Message.Content)
 	if start, end := strings.Index(content, "{"), strings.LastIndex(content, "}"); start >= 0 && end > start {

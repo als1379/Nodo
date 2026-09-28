@@ -4,7 +4,7 @@ Base REST API for Nodo, written in Go with PostgreSQL authentication.
 
 ## Run locally
 
-Requirements: Docker. Copy the environment template and add your OpenRouter key:
+Requirements: Docker. Copy the environment template:
 
 ```sh
 cp .env.example .env
@@ -44,25 +44,16 @@ curl http://localhost:8080/v1/auth/me \
 
 The OpenAPI 3.1 specification is available at `GET /openapi.json`, or through the frontend proxy at `GET /api/openapi.json`.
 
-## Word quiz
+## Dictionary API
 
-Set `OPENROUTER_API_KEY` in your local `.env`. `OPENROUTER_MODEL` defaults to the free-model router `openrouter/free`.
-
-Get a question:
+Look up an Italian word with an authenticated request:
 
 ```sh
-curl http://localhost:8080/v1/quiz/word
+curl http://localhost:8080/v1/dictionary/parlare \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-Answer using the question ID and a zero-based option number. The response says whether the choice was correct; request the question endpoint again for the next word:
-
-```sh
-curl -X POST http://localhost:8080/v1/quiz/word/QUESTION_ID/answer \
-  -H "Content-Type: application/json" \
-  -d '{"option":0}'
-```
-
-Questions and answers are held in memory and disappear when the API restarts.
+The dictionary module fetches structured lexical evidence from WiktAPI/Wiktionary, then asks the OpenRouter teaching agent to produce a focused learner lesson with grammar rules, useful forms, conjugation tables, patterns, and examples. Set `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` in `.env` to enable lesson generation.
 
 ## Commands
 

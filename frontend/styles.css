@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #17211b;
@@ -56,7 +56,7 @@ button { font: inherit; }
   box-shadow: 0 5px 14px rgba(39, 103, 73, .22);
 }
 
-.quiz {
+.dictionary {
   align-self: center;
   margin: 48px 0;
   padding: clamp(26px, 6vw, 52px);
@@ -109,6 +109,13 @@ h1 {
   letter-spacing: -.025em;
 }
 
+.word-search { margin: 22px 0 4px; padding: 13px; border-radius: 13px; background: #f2f6f0; }
+.word-search label { display: block; margin-bottom: 7px; color: #607067; font-size: .76rem; font-weight: 750; }
+.word-search div { display: flex; gap: 8px; }
+.word-search input { min-width: 0; flex: 1; padding: 10px 12px; border: 1px solid #d5dfd5; border-radius: 9px; background: white; font: inherit; }
+.word-search button { padding: 10px 16px; border: 0; border-radius: 9px; color: white; background: #276749; font-weight: 750; cursor: pointer; }
+.back-button { margin: 0 0 22px; padding: 0; border: 0; color: #276749; background: transparent; font-weight: 750; cursor: pointer; }
+
 .word {
   margin: 34px 0 26px;
   font-family: Georgia, "Times New Roman", serif;
@@ -155,6 +162,65 @@ h1 {
 .feedback { margin-top: 18px; font-weight: 700; }
 .feedback.success { color: #237248; }
 .feedback.failure { color: #a43c33; }
+.batch-progress { margin: 10px 0 0; color: #7d887f; font-size: .82rem; }
+.word-details { margin-top: 24px; padding-top: 22px; border-top: 1px solid #dbe4da; }
+.details-label { margin: 0 0 14px; color: #598267; font-size: .72rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.learning-card { display: grid; gap: 12px; }
+.learning-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.learning-word { margin: 0; color: #1f5139; font-family: Georgia, "Times New Roman", serif; font-size: 2rem; font-weight: 500; }
+.learning-pos { margin: 3px 0 0; color: #758078; font-size: .8rem; text-transform: capitalize; }
+.lesson-block { padding: 16px 18px; border-radius: 14px; background: #f6f9f4; }
+.primary-meaning { background: #eaf4e8; }
+.lesson-kicker { margin: 0 0 7px; color: #68806f; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.learning-meaning { margin: 0; color: #1f3d2d; font-family: Georgia, "Times New Roman", serif; font-size: 1.3rem; line-height: 1.35; }
+.learning-summary { margin: 8px 0 0; color: #607067; font-size: .86rem; line-height: 1.45; }
+.grammar-rule { margin: 0 0 6px; color: #1f5139; font-size: 1.1rem; font-weight: 750; }
+.grammar-note { margin: 0; color: #294936; font-weight: 650; line-height: 1.5; }
+.essentials-focus { border-left: 3px solid #6d9b79; }
+.formation-focus { background: #f1f5f8; }
+.formation-rules { margin: 10px 0 0; padding-left: 20px; color: #526158; font-size: .86rem; line-height: 1.5; }
+.formation-rules li + li { margin-top: 5px; }
+.key-form { margin: 4px 0; color: #405047; font-size: .9rem; }
+.mini-table-title { margin: 14px 0 7px; color: #405047; font-size: .78rem; font-weight: 750; }
+.conjugation-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.conjugation-preview div { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 9px; background: white; }
+.pronoun { color: #7d887f; font-size: .7rem; }
+.example-focus { border-left: 3px solid #e7b966; background: #fffaf0; }
+.example-pair + .example-pair { margin-top: 13px; padding-top: 13px; border-top: 1px solid #eee2c9; }
+.example-italian { margin: 0; color: #35493d; font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; font-style: italic; }
+.example-translation { margin: 5px 0 0; color: #737d76; font-size: .84rem; }
+.learning-related { margin: 3px 3px 0; color: #657269; font-size: .84rem; }
+.learning-table-title { margin: 0 0 11px; color: #1f5139; font-family: Georgia, "Times New Roman", serif; font-size: 1.1rem; font-weight: 600; }
+.learning-table-note { margin: -4px 0 10px; color: #6d7971; font-size: .8rem; }
+.learning-forms-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.learning-form { display: flex; flex-direction: column; padding: 9px 10px; border: 1px solid #e1e9df; border-radius: 9px; background: white; }
+.learning-form-label { color: #7d887f; font-size: .69rem; }
+.learning-form-value { margin-top: 2px; color: #244d35; font-size: .88rem; }
+.patterns-focus { background: #f4f2fb; }
+.pattern { margin: 6px 0; color: #504a65; font-size: .87rem; }
+.full-dictionary { margin-top: 16px; border-top: 1px solid #e3e9e2; }
+.full-dictionary-title { padding: 15px 2px 8px; color: #52705e; font-size: .86rem; font-weight: 750; cursor: pointer; }
+.full-dictionary-body { padding-top: 12px; }
+.dictionary-entry + .dictionary-entry { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e3e9e2; }
+.part-of-speech { margin: 0; color: #1f5139; font-family: Georgia, "Times New Roman", serif; font-size: 1.35rem; font-weight: 500; text-transform: capitalize; }
+.pronunciation { margin: 7px 0; color: #567263; font-family: Georgia, "Times New Roman", serif; }
+.etymology, .metadata, .relations, .remark { color: #657269; font-size: .86rem; line-height: 1.5; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chip { padding: 3px 8px; border-radius: 999px; color: #496555; background: #edf4ec; font-size: .72rem; text-transform: capitalize; }
+.definitions { margin: 12px 0; padding-left: 24px; }
+.definitions li { margin: 9px 0; padding-left: 5px; line-height: 1.5; }
+.example { margin: 5px 0 0; color: #6d7971; font-size: .88rem; font-style: italic; }
+.remark { margin: 5px 0; }
+.forms-panel { margin: 16px 0; border: 1px solid #dbe4da; border-radius: 12px; overflow: hidden; }
+.forms-title { padding: 12px 14px; color: #276749; background: #f6faf5; font-weight: 750; cursor: pointer; }
+.form-group { padding: 12px 14px; border-top: 1px solid #e3e9e2; }
+.form-group-title { margin: 0 0 9px; color: #526158; font-size: .78rem; text-transform: capitalize; }
+.forms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.form-item { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 8px; background: #f7f9f6; }
+.form-word { color: #1f5139; }
+.form-tags { margin-top: 2px; color: #7d887f; font-size: .7rem; }
+.word-details a { color: #276749; font-size: .86rem; font-weight: 700; }
+.details-error { color: #a43c33; }
 
 .next, .secondary {
   margin-top: 20px;
@@ -189,5 +255,6 @@ footer { color: #7d887f; font-size: .8rem; text-align: center; }
 
 @media (max-width: 520px) {
   .shell { width: min(100% - 20px, 720px); padding-top: 16px; }
-  .quiz { margin: 26px 0; border-radius: 22px; }
+  .dictionary { margin: 26px 0; border-radius: 22px; }
+  .conjugation-preview { grid-template-columns: repeat(2, 1fr); }
 }

@@ -20,6 +20,7 @@ type Config struct {
 	OpenRouterModel  string
 	FrontendOrigin   string
 	JWTSecret        string
+	DictionaryURL    string
 }
 
 func Load() (Config, error) {
@@ -31,9 +32,10 @@ func Load() (Config, error) {
 	cfg.HTTPAddr = env("HTTP_ADDR", cfg.HTTPAddr)
 	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
 	cfg.OpenRouterAPIKey = os.Getenv("OPENROUTER_API_KEY")
-	cfg.OpenRouterModel = env("OPENROUTER_MODEL", "openrouter/free")
+	cfg.OpenRouterModel = env("OPENROUTER_MODEL", "google/gemini-3.8-flash")
 	cfg.FrontendOrigin = env("FRONTEND_ORIGIN", "http://localhost:5173")
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	cfg.DictionaryURL = env("DICTIONARY_API_URL", "https://api.wiktapi.dev")
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}

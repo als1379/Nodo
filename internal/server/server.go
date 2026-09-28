@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"nodo/internal/auth"
+	"nodo/internal/dictionary"
 	"nodo/internal/openapi"
-	"nodo/internal/quiz"
 )
 
-func New(authHTTP *auth.HTTP, quizHTTP *quiz.HTTP, logger *slog.Logger, frontendOrigin string, health func() error) http.Handler {
+func New(authHTTP *auth.HTTP, dictionaryHTTP *dictionary.HTTP, logger *slog.Logger, frontendOrigin string, health func() error) http.Handler {
 	mux := http.NewServeMux()
 	authHTTP.RegisterRoutes(mux)
-	quizHTTP.RegisterRoutes(mux, authHTTP.RequireAuth)
+	dictionaryHTTP.RegisterRoutes(mux, authHTTP.RequireAuth)
 	mux.Handle("GET /openapi.json", openapi.Handler())
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
