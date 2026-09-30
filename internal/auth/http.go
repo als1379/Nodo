@@ -15,6 +15,11 @@ const userContextKey contextKey = "authenticated_user"
 
 func NewHTTP(service *Service) *HTTP { return &HTTP{service: service} }
 
+func UserFromContext(ctx context.Context) (User, bool) {
+	user, ok := ctx.Value(userContextKey).(User)
+	return user, ok
+}
+
 func (h *HTTP) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/auth/register", h.register)
 	mux.HandleFunc("POST /v1/auth/login", h.login)

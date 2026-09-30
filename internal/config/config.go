@@ -32,7 +32,7 @@ func Load() (Config, error) {
 	cfg.HTTPAddr = env("HTTP_ADDR", cfg.HTTPAddr)
 	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
 	cfg.OpenRouterAPIKey = os.Getenv("OPENROUTER_API_KEY")
-	cfg.OpenRouterModel = env("OPENROUTER_MODEL", "google/gemini-3.8-flash")
+	cfg.OpenRouterModel = env("OPENROUTER_MODEL", "google/gemini-3.1-flash-lite")
 	cfg.FrontendOrigin = env("FRONTEND_ORIGIN", "http://localhost:5173")
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
 	cfg.DictionaryURL = env("DICTIONARY_API_URL", "https://api.wiktapi.dev")

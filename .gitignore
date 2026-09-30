@@ -31,6 +31,8 @@ go.work.sum
 /bin/
 /.cache/
 /.gopath/
+/.gocache/
+/.venv-difficulty/
 
 # Editor/IDE
 # .idea/

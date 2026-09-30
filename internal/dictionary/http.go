@@ -2,19 +2,18 @@ package dictionary
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
-	"strings"
-	"unicode/utf8"
 )
 
 type HTTP struct {
-	dictionary *Dictionary
-	logger     *slog.Logger
+	service *Service
+	logger  *slog.Logger
 }
 
-func NewHTTP(dictionary *Dictionary, logger *slog.Logger) *HTTP {
-	return &HTTP{dictionary: dictionary, logger: logger}
+func NewHTTP(service *Service, logger *slog.Logger) *HTTP {
+	return &HTTP{service: service, logger: logger}
 }
 
 func (h *HTTP) RegisterRoutes(mux *http.ServeMux, requireAuth func(http.Handler) http.Handler) {
@@ -22,21 +21,40 @@ func (h *HTTP) RegisterRoutes(mux *http.ServeMux, requireAuth func(http.Handler)
 }
 
 func (h *HTTP) lookup(w http.ResponseWriter, r *http.Request) {
-	word := strings.ToLower(strings.TrimSpace(r.PathValue("word")))
-	if word == "" || utf8.RuneCountInString(word) > 80 {
-		writeError(w, http.StatusBadRequest, "word must be between 1 and 80 characters")
+	var result LookupResult
+	var err error
+	switch r.URL.Query().Get("view") {
+	case "preview":
+		result, err = h.service.Preview(r.Context(), r.PathValue("word"))
+	case "entry":
+		result, err = h.service.Entry(r.Context(), r.PathValue("word"))
+	case "":
+		result, err = h.service.Lookup(r.Context(), r.PathValue("word"))
+	default:
+		writeError(w, 400, "view must be preview or entry")
 		return
 	}
-	details, err := h.dictionary.Lookup(r.Context(), word)
+	if errors.Is(err, ErrInvalidWord) {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err != nil {
-		h.logger.Error("word lookup failed", "word", word, "error", err)
-		writeError(w, http.StatusNotFound, "Italian word not found")
+		h.logger.Error("word lookup failed", "word", r.PathValue("word"), "error", err)
+		if errors.Is(err, ErrWordNotFound) {
+			writeError(w, 404, "Italian word not found")
+		} else {
+			writeError(w, 502, "The dictionary is temporarily unavailable. Please try again.")
+		}
 		return
 	}
-	if details.LearningFailure != nil {
-		h.logger.Error("learning agent failed", "word", word, "error", details.LearningFailure)
+	if result.LessonWarning != nil {
+		h.logger.Error("learning agent failed", "word", result.Details.Word, "error", result.LessonWarning)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"details": details})
+	writeJSON(w, http.StatusOK, lookupResponse{Details: result.Details})
+}
+
+type lookupResponse struct {
+	Details WordDetails `json:"details"`
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {

@@ -8,13 +8,15 @@ import (
 
 	"nodo/internal/auth"
 	"nodo/internal/dictionary"
+	"nodo/internal/flashcard"
 	"nodo/internal/openapi"
 )
 
-func New(authHTTP *auth.HTTP, dictionaryHTTP *dictionary.HTTP, logger *slog.Logger, frontendOrigin string, health func() error) http.Handler {
+func New(authHTTP *auth.HTTP, dictionaryHTTP *dictionary.HTTP, flashcardHTTP *flashcard.HTTP, logger *slog.Logger, frontendOrigin string, health func() error) http.Handler {
 	mux := http.NewServeMux()
 	authHTTP.RegisterRoutes(mux)
 	dictionaryHTTP.RegisterRoutes(mux, authHTTP.RequireAuth)
+	flashcardHTTP.RegisterRoutes(mux, authHTTP.RequireAuth)
 	mux.Handle("GET /openapi.json", openapi.Handler())
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -34,7 +36,7 @@ func cors(origin string, next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

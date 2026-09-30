@@ -17,6 +17,21 @@ type Client struct {
 	http   *http.Client
 }
 
+type ConfigurationError struct{ message string }
+
+func (e *ConfigurationError) Error() string              { return e.message }
+func (e *ConfigurationError) IsConfigurationError() bool { return true }
+
+type ProviderError struct {
+	Status int
+	Body   string
+}
+
+func (e *ProviderError) Error() string {
+	return fmt.Sprintf("OpenRouter returned status %d: %s", e.Status, e.Body)
+}
+func (e *ProviderError) StatusCode() int { return e.Status }
+
 func New(apiKey, model string, httpClient *http.Client) *Client {
 	return &Client{apiKey: apiKey, model: model, http: httpClient}
 }
@@ -34,7 +49,7 @@ func (c *Client) CompleteJSONSchema(ctx context.Context, systemPrompt, userPromp
 
 func (c *Client) completeJSON(ctx context.Context, systemPrompt, userPrompt string, responseFormat map[string]any) ([]byte, error) {
 	if c.apiKey == "" {
-		return nil, errors.New("OPENROUTER_API_KEY is not configured")
+		return nil, &ConfigurationError{message: "OPENROUTER_API_KEY is not configured"}
 	}
 	var lastErr error
 	for _, model := range strings.Split(c.model, ",") {
@@ -82,7 +97,7 @@ func (c *Client) completeModel(ctx context.Context, model, systemPrompt, userPro
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("OpenRouter returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(responseBody)))
+		return nil, &ProviderError{Status: resp.StatusCode, Body: strings.TrimSpace(string(responseBody))}
 	}
 	var completion struct {
 		Choices []struct {

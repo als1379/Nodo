@@ -1,675 +1,1129 @@
-﻿{
-    "openapi":  "3.1.0",
-    "info":  {
-                 "title":  "Nodo API",
-                 "version":  "0.1.0",
-                 "description":  "REST API for Nodo authentication and learner-focused Italian dictionary lessons."
-             },
-    "servers":  [
-                    {
-                        "url":  "/api",
-                        "description":  "Frontend proxy"
-                    },
-                    {
-                        "url":  "http://localhost:8080",
-                        "description":  "Direct local API"
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nodo API",
+    "version": "0.1.0",
+    "description": "REST API for Nodo authentication and learner-focused Italian dictionary lessons."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Frontend proxy"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Direct local API"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System"
+    },
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Dictionary"
+    },
+    {
+      "name": "Flashcards"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "operationId": "getHealth",
+        "summary": "Check API and database health",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "register",
+        "summary": "Create an account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "login",
+        "summary": "Log in with an email or username",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "getCurrentUser",
+        "summary": "Get the authenticated user",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "user"
+                  ],
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
                     }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "logout",
+        "summary": "Revoke the current JWT session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logged out"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/dictionary/{word}": {
+      "get": {
+        "tags": [
+          "Dictionary"
+        ],
+        "operationId": "getItalianWordLesson",
+        "summary": "Build a learner-focused lesson for an Italian word",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "word",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preview",
+                "entry"
+              ]
+            },
+            "description": "preview returns cached lesson or dictionary meaning without invoking the LLM. entry loads full dictionary evidence. Omit for a teaching lesson."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dictionary evidence and generated learning guide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "details"
+                  ],
+                  "properties": {
+                    "details": {
+                      "$ref": "#/components/schemas/WordDetails"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/flashcards/sessions": {
+      "post": {
+        "tags": [
+          "Flashcards"
+        ],
+        "operationId": "startFlashcardSession",
+        "summary": "Start or resume a learning or review session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "learn",
+                      "review"
+                    ],
+                    "default": "learn",
+                    "description": "learn: adaptive new vocabulary and due reviews; review: previously practiced learning words and due learned words. Never includes unseen vocabulary."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved study session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/flashcards/sessions/{session}/answers": {
+      "post": {
+        "tags": [
+          "Flashcards"
+        ],
+        "operationId": "answerFlashcard",
+        "summary": "Save an answer and update the FSRS schedule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "word_id",
+                  "known"
                 ],
-    "tags":  [
-                 {
-                     "name":  "System"
-                 },
-                 {
-                     "name":  "Authentication"
-                 },
-                 {
-                     "name":  "Dictionary"
-                 }
-             ],
-    "paths":  {
-                  "/health":  {
-                                  "get":  {
-                                              "tags":  [
-                                                           "System"
-                                                       ],
-                                              "operationId":  "getHealth",
-                                              "summary":  "Check API and database health",
-                                              "responses":  {
-                                                                "200":  {
-                                                                            "description":  "Service is healthy",
-                                                                            "content":  {
-                                                                                            "application/json":  {
-                                                                                                                     "schema":  {
-                                                                                                                                    "$ref":  "#/components/schemas/Health"
-                                                                                                                                }
-                                                                                                                 }
-                                                                                        }
-                                                                        },
-                                                                "503":  {
-                                                                            "description":  "Database is unavailable",
-                                                                            "content":  {
-                                                                                            "application/json":  {
-                                                                                                                     "schema":  {
-                                                                                                                                    "$ref":  "#/components/schemas/Health"
-                                                                                                                                }
-                                                                                                                 }
-                                                                                        }
-                                                                        }
-                                                            }
-                                          }
-                              },
-                  "/v1/auth/register":  {
-                                            "post":  {
-                                                         "tags":  [
-                                                                      "Authentication"
-                                                                  ],
-                                                         "operationId":  "register",
-                                                         "summary":  "Create an account",
-                                                         "requestBody":  {
-                                                                             "required":  true,
-                                                                             "content":  {
-                                                                                             "application/json":  {
-                                                                                                                      "schema":  {
-                                                                                                                                     "$ref":  "#/components/schemas/RegisterRequest"
-                                                                                                                                 }
-                                                                                                                  }
-                                                                                         }
-                                                                         },
-                                                         "responses":  {
-                                                                           "201":  {
-                                                                                       "description":  "Account created",
-                                                                                       "content":  {
-                                                                                                       "application/json":  {
-                                                                                                                                "schema":  {
-                                                                                                                                               "$ref":  "#/components/schemas/AuthResult"
-                                                                                                                                           }
-                                                                                                                            }
-                                                                                                   }
-                                                                                   },
-                                                                           "409":  {
-                                                                                       "$ref":  "#/components/responses/Error"
-                                                                                   },
-                                                                           "422":  {
-                                                                                       "$ref":  "#/components/responses/Error"
-                                                                                   }
-                                                                       }
-                                                     }
-                                        },
-                  "/v1/auth/login":  {
-                                         "post":  {
-                                                      "tags":  [
-                                                                   "Authentication"
-                                                               ],
-                                                      "operationId":  "login",
-                                                      "summary":  "Log in with an email or username",
-                                                      "requestBody":  {
-                                                                          "required":  true,
-                                                                          "content":  {
-                                                                                          "application/json":  {
-                                                                                                                   "schema":  {
-                                                                                                                                  "$ref":  "#/components/schemas/LoginRequest"
-                                                                                                                              }
-                                                                                                               }
-                                                                                      }
-                                                                      },
-                                                      "responses":  {
-                                                                        "200":  {
-                                                                                    "description":  "Login successful",
-                                                                                    "content":  {
-                                                                                                    "application/json":  {
-                                                                                                                             "schema":  {
-                                                                                                                                            "$ref":  "#/components/schemas/AuthResult"
-                                                                                                                                        }
-                                                                                                                         }
-                                                                                                }
-                                                                                },
-                                                                        "401":  {
-                                                                                    "$ref":  "#/components/responses/Error"
-                                                                                },
-                                                                        "422":  {
-                                                                                    "$ref":  "#/components/responses/Error"
-                                                                                }
-                                                                    }
-                                                  }
-                                     },
-                  "/v1/auth/me":  {
-                                      "get":  {
-                                                  "tags":  [
-                                                               "Authentication"
-                                                           ],
-                                                  "operationId":  "getCurrentUser",
-                                                  "summary":  "Get the authenticated user",
-                                                  "security":  [
-                                                                   {
-                                                                       "bearerAuth":  [
-
-                                                                                      ]
-                                                                   }
-                                                               ],
-                                                  "responses":  {
-                                                                    "200":  {
-                                                                                "description":  "Current user",
-                                                                                "content":  {
-                                                                                                "application/json":  {
-                                                                                                                         "schema":  {
-                                                                                                                                        "type":  "object",
-                                                                                                                                        "required":  [
-                                                                                                                                                         "user"
-                                                                                                                                                     ],
-                                                                                                                                        "properties":  {
-                                                                                                                                                           "user":  {
-                                                                                                                                                                        "$ref":  "#/components/schemas/User"
-                                                                                                                                                                    }
-                                                                                                                                                       }
-                                                                                                                                    }
-                                                                                                                     }
-                                                                                            }
-                                                                            },
-                                                                    "401":  {
-                                                                                "$ref":  "#/components/responses/Error"
-                                                                            }
-                                                                }
-                                              }
-                                  },
-                  "/v1/auth/logout":  {
-                                          "post":  {
-                                                       "tags":  [
-                                                                    "Authentication"
-                                                                ],
-                                                       "operationId":  "logout",
-                                                       "summary":  "Revoke the current JWT session",
-                                                       "security":  [
-                                                                        {
-                                                                            "bearerAuth":  [
-
-                                                                                           ]
-                                                                        }
-                                                                    ],
-                                                       "responses":  {
-                                                                         "204":  {
-                                                                                     "description":  "Logged out"
-                                                                                 },
-                                                                         "401":  {
-                                                                                     "$ref":  "#/components/responses/Error"
-                                                                                 }
-                                                                     }
-                                                   }
-                                      },
-                  "/v1/dictionary/{word}":  {
-                                                "get":  {
-                                                            "tags":  [
-                                                                         "Dictionary"
-                                                                     ],
-                                                            "operationId":  "getItalianWordLesson",
-                                                            "summary":  "Build a learner-focused lesson for an Italian word",
-                                                            "security":  [
-                                                                             {
-                                                                                 "bearerAuth":  [
-
-                                                                                                ]
-                                                                             }
-                                                                         ],
-                                                            "parameters":  [
-                                                                               {
-                                                                                   "name":  "word",
-                                                                                   "in":  "path",
-                                                                                   "required":  true,
-                                                                                   "schema":  {
-                                                                                                  "type":  "string",
-                                                                                                  "maxLength":  80
-                                                                                              }
-                                                                               }
-                                                                           ],
-                                                            "responses":  {
-                                                                              "200":  {
-                                                                                          "description":  "Dictionary evidence and generated learning guide",
-                                                                                          "content":  {
-                                                                                                          "application/json":  {
-                                                                                                                                   "schema":  {
-                                                                                                                                                  "type":  "object",
-                                                                                                                                                  "required":  [
-                                                                                                                                                                   "details"
-                                                                                                                                                               ],
-                                                                                                                                                  "properties":  {
-                                                                                                                                                                     "details":  {
-                                                                                                                                                                                     "$ref":  "#/components/schemas/WordDetails"
-                                                                                                                                                                                 }
-                                                                                                                                                                 }
-                                                                                                                                              }
-                                                                                                                               }
-                                                                                                      }
-                                                                                      },
-                                                                              "400":  {
-                                                                                          "$ref":  "#/components/responses/Error"
-                                                                                      },
-                                                                              "401":  {
-                                                                                          "$ref":  "#/components/responses/Error"
-                                                                                      },
-                                                                              "404":  {
-                                                                                          "$ref":  "#/components/responses/Error"
-                                                                                      }
-                                                                          }
-                                                        }
-                                            }
+                "properties": {
+                  "word_id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "known": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated word progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordProgress"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/flashcards/words": {
+      "get": {
+        "tags": [
+          "Flashcards"
+        ],
+        "operationId": "listFlashcardWords",
+        "summary": "List the user's learning or learned words",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "learning",
+                "learned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User word library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "words": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WordProgress"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/flashcards/overview": {
+      "get": {
+        "tags": [
+          "Flashcards"
+        ],
+        "operationId": "getStudyOverview",
+        "summary": "Get practice counts and adaptive difficulty",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "StudyOverview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/flashcards/settings": {
+      "put": {
+        "tags": [
+          "Flashcards"
+        ],
+        "operationId": "saveStudySettings",
+        "summary": "Set a starting difficulty for future sessions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudySettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "StudySettings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "examples": [
+              "ok"
+            ]
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "examples": [
+              "user@example.com"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 10,
+            "maxLength": 72,
+            "examples": [
+              "a-secure-password"
+            ]
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "login",
+          "password"
+        ],
+        "properties": {
+          "login": {
+            "type": "string",
+            "examples": [
+              "admin"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "examples": [
+              "ali"
+            ]
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AuthResult": {
+        "type": "object",
+        "required": [
+          "user",
+          "token",
+          "expires_at"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "token": {
+            "type": "string",
+            "description": "Signed HS256 JWT"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WordDetails": {
+        "type": "object",
+        "required": [
+          "word",
+          "entries",
+          "source_url"
+        ],
+        "properties": {
+          "word": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "learning": {
+            "$ref": "#/components/schemas/LearningGuide"
+          },
+          "learning_error": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryEntry"
+            }
+          }
+        }
+      },
+      "DictionaryEntry": {
+        "type": "object",
+        "required": [
+          "part_of_speech",
+          "definitions"
+        ],
+        "properties": {
+          "part_of_speech": {
+            "type": "string"
+          },
+          "grammar": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Gender and other grammatical labels"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pronunciation": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "etymology": {
+            "type": "string"
+          },
+          "definitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Definition"
+            }
+          },
+          "forms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WordForm"
+            }
+          },
+          "synonyms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedWord"
+            }
+          },
+          "antonyms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedWord"
+            }
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedWord"
+            }
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "required": [
+          "meaning"
+        ],
+        "properties": {
+          "meaning": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remarks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "synonyms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedWord"
+            }
+          },
+          "antonyms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedWord"
+            }
+          }
+        }
+      },
+      "WordForm": {
+        "type": "object",
+        "required": [
+          "form"
+        ],
+        "properties": {
+          "form": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      },
+      "RelatedWord": {
+        "type": "object",
+        "required": [
+          "word"
+        ],
+        "properties": {
+          "word": {
+            "type": "string"
+          },
+          "sense": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LearningGuide": {
+        "type": "object",
+        "required": [
+          "meaning",
+          "summary",
+          "grammar_note",
+          "examples"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "grammar_note": {
+            "type": "string"
+          },
+          "formation_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningTable"
+            }
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningExample"
+            }
+          },
+          "meaning": {
+            "type": "string",
+            "description": "Direct standalone English translation"
+          }
+        }
+      },
+      "LearningTable": {
+        "type": "object",
+        "required": [
+          "title",
+          "forms"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "forms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningForm"
+            }
+          }
+        }
+      },
+      "LearningForm": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "LearningExample": {
+        "type": "object",
+        "required": [
+          "italian",
+          "english"
+        ],
+        "properties": {
+          "italian": {
+            "type": "string"
+          },
+          "english": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "message"
+            ],
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Flashcard": {
+        "type": "object",
+        "required": [
+          "id",
+          "word",
+          "review"
+        ],
+        "properties": {
+          "word": {
+            "type": "string"
+          },
+          "part_of_speech": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "review": {
+            "type": "boolean"
+          },
+          "difficulty_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Estimated lexical difficulty; omitted for unscored historical vocabulary."
+          }
+        }
+      },
+      "StudySession": {
+        "type": "object",
+        "required": [
+          "id",
+          "mode",
+          "cards",
+          "difficulty_target",
+          "total",
+          "answered",
+          "recalled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "learn",
+              "review"
+            ]
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Flashcard"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "answered": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "recalled": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "difficulty_target": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
+      "WordProgress": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Flashcard"
+          },
+          {
+            "type": "object",
+            "required": [
+              "state",
+              "known_count",
+              "unknown_count",
+              "due"
+            ],
+            "properties": {
+              "state": {
+                "type": "string",
+                "enum": [
+                  "New",
+                  "Learning",
+                  "Review",
+                  "Relearning"
+                ]
               },
-    "components":  {
-                       "securitySchemes":  {
-                                               "bearerAuth":  {
-                                                                  "type":  "http",
-                                                                  "scheme":  "bearer",
-                                                                  "bearerFormat":  "JWT"
-                                                              }
-                                           },
-                       "schemas":  {
-                                       "Health":  {
-                                                      "type":  "object",
-                                                      "required":  [
-                                                                       "status"
-                                                                   ],
-                                                      "properties":  {
-                                                                         "status":  {
-                                                                                        "type":  "string",
-                                                                                        "examples":  [
-                                                                                                         "ok"
-                                                                                                     ]
-                                                                                    }
-                                                                     }
-                                                  },
-                                       "RegisterRequest":  {
-                                                               "type":  "object",
-                                                               "required":  [
-                                                                                "email",
-                                                                                "password"
-                                                                            ],
-                                                               "properties":  {
-                                                                                  "email":  {
-                                                                                                "type":  "string",
-                                                                                                "format":  "email",
-                                                                                                "examples":  [
-                                                                                                                 "user@example.com"
-                                                                                                             ]
-                                                                                            },
-                                                                                  "password":  {
-                                                                                                   "type":  "string",
-                                                                                                   "format":  "password",
-                                                                                                   "minLength":  10,
-                                                                                                   "maxLength":  72,
-                                                                                                   "examples":  [
-                                                                                                                    "a-secure-password"
-                                                                                                                ]
-                                                                                               }
-                                                                              }
-                                                           },
-                                       "LoginRequest":  {
-                                                            "type":  "object",
-                                                            "required":  [
-                                                                             "login",
-                                                                             "password"
-                                                                         ],
-                                                            "properties":  {
-                                                                               "login":  {
-                                                                                             "type":  "string",
-                                                                                             "examples":  [
-                                                                                                              "admin"
-                                                                                                          ]
-                                                                                         },
-                                                                               "password":  {
-                                                                                                "type":  "string",
-                                                                                                "format":  "password",
-                                                                                                "examples":  [
-                                                                                                                 "ali"
-                                                                                                             ]
-                                                                                            }
-                                                                           }
-                                                        },
-                                       "User":  {
-                                                    "type":  "object",
-                                                    "required":  [
-                                                                     "id",
-                                                                     "email",
-                                                                     "created_at"
-                                                                 ],
-                                                    "properties":  {
-                                                                       "id":  {
-                                                                                  "type":  "string",
-                                                                                  "format":  "uuid"
-                                                                              },
-                                                                       "username":  {
-                                                                                        "type":  "string"
-                                                                                    },
-                                                                       "email":  {
-                                                                                     "type":  "string",
-                                                                                     "format":  "email"
-                                                                                 },
-                                                                       "created_at":  {
-                                                                                          "type":  "string",
-                                                                                          "format":  "date-time"
-                                                                                      }
-                                                                   }
-                                                },
-                                       "AuthResult":  {
-                                                          "type":  "object",
-                                                          "required":  [
-                                                                           "user",
-                                                                           "token",
-                                                                           "expires_at"
-                                                                       ],
-                                                          "properties":  {
-                                                                             "user":  {
-                                                                                          "$ref":  "#/components/schemas/User"
-                                                                                      },
-                                                                             "token":  {
-                                                                                           "type":  "string",
-                                                                                           "description":  "Signed HS256 JWT"
-                                                                                       },
-                                                                             "expires_at":  {
-                                                                                                "type":  "string",
-                                                                                                "format":  "date-time"
-                                                                                            }
-                                                                         }
-                                                      },
-                                       "WordDetails":  {
-                                                           "type":  "object",
-                                                           "required":  [
-                                                                            "word",
-                                                                            "entries",
-                                                                            "source_url"
-                                                                        ],
-                                                           "properties":  {
-                                                                              "word":  {
-                                                                                           "type":  "string"
-                                                                                       },
-                                                                              "source_url":  {
-                                                                                                 "type":  "string",
-                                                                                                 "format":  "uri"
-                                                                                             },
-                                                                              "learning":  {
-                                                                                               "$ref":  "#/components/schemas/LearningGuide"
-                                                                                           },
-                                                                              "learning_error":  {
-                                                                                                     "type":  "string"
-                                                                                                 },
-                                                                              "entries":  {
-                                                                                              "type":  "array",
-                                                                                              "items":  {
-                                                                                                            "$ref":  "#/components/schemas/DictionaryEntry"
-                                                                                                        }
-                                                                                          }
-                                                                          }
-                                                       },
-                                       "DictionaryEntry":  {
-                                                               "type":  "object",
-                                                               "required":  [
-                                                                                "part_of_speech",
-                                                                                "definitions"
-                                                                            ],
-                                                               "properties":  {
-                                                                                  "part_of_speech":  {
-                                                                                                         "type":  "string"
-                                                                                                     },
-                                                                                  "grammar":  {
-                                                                                                  "type":  "array",
-                                                                                                  "items":  {
-                                                                                                                "type":  "string"
-                                                                                                            },
-                                                                                                  "description":  "Gender and other grammatical labels"
-                                                                                              },
-                                                                                  "categories":  {
-                                                                                                     "type":  "array",
-                                                                                                     "items":  {
-                                                                                                                   "type":  "string"
-                                                                                                               }
-                                                                                                 },
-                                                                                  "pronunciation":  {
-                                                                                                        "type":  "array",
-                                                                                                        "items":  {
-                                                                                                                      "type":  "string"
-                                                                                                                  }
-                                                                                                    },
-                                                                                  "etymology":  {
-                                                                                                    "type":  "string"
-                                                                                                },
-                                                                                  "definitions":  {
-                                                                                                      "type":  "array",
-                                                                                                      "items":  {
-                                                                                                                    "$ref":  "#/components/schemas/Definition"
-                                                                                                                }
-                                                                                                  },
-                                                                                  "forms":  {
-                                                                                                "type":  "array",
-                                                                                                "items":  {
-                                                                                                              "$ref":  "#/components/schemas/WordForm"
-                                                                                                          }
-                                                                                            },
-                                                                                  "synonyms":  {
-                                                                                                   "type":  "array",
-                                                                                                   "items":  {
-                                                                                                                 "$ref":  "#/components/schemas/RelatedWord"
-                                                                                                             }
-                                                                                               },
-                                                                                  "antonyms":  {
-                                                                                                   "type":  "array",
-                                                                                                   "items":  {
-                                                                                                                 "$ref":  "#/components/schemas/RelatedWord"
-                                                                                                             }
-                                                                                               },
-                                                                                  "related":  {
-                                                                                                  "type":  "array",
-                                                                                                  "items":  {
-                                                                                                                "$ref":  "#/components/schemas/RelatedWord"
-                                                                                                            }
-                                                                                              }
-                                                                              }
-                                                           },
-                                       "Definition":  {
-                                                          "type":  "object",
-                                                          "required":  [
-                                                                           "meaning"
-                                                                       ],
-                                                          "properties":  {
-                                                                             "meaning":  {
-                                                                                             "type":  "string"
-                                                                                         },
-                                                                             "tags":  {
-                                                                                          "type":  "array",
-                                                                                          "items":  {
-                                                                                                        "type":  "string"
-                                                                                                    }
-                                                                                      },
-                                                                             "topics":  {
-                                                                                            "type":  "array",
-                                                                                            "items":  {
-                                                                                                          "type":  "string"
-                                                                                                      }
-                                                                                        },
-                                                                             "remarks":  {
-                                                                                             "type":  "array",
-                                                                                             "items":  {
-                                                                                                           "type":  "string"
-                                                                                                       }
-                                                                                         },
-                                                                             "examples":  {
-                                                                                              "type":  "array",
-                                                                                              "items":  {
-                                                                                                            "type":  "string"
-                                                                                                        }
-                                                                                          },
-                                                                             "synonyms":  {
-                                                                                              "type":  "array",
-                                                                                              "items":  {
-                                                                                                            "$ref":  "#/components/schemas/RelatedWord"
-                                                                                                        }
-                                                                                          },
-                                                                             "antonyms":  {
-                                                                                              "type":  "array",
-                                                                                              "items":  {
-                                                                                                            "$ref":  "#/components/schemas/RelatedWord"
-                                                                                                        }
-                                                                                          }
-                                                                         }
-                                                      },
-                                       "WordForm":  {
-                                                        "type":  "object",
-                                                        "required":  [
-                                                                         "form"
-                                                                     ],
-                                                        "properties":  {
-                                                                           "form":  {
-                                                                                        "type":  "string"
-                                                                                    },
-                                                                           "tags":  {
-                                                                                        "type":  "array",
-                                                                                        "items":  {
-                                                                                                      "type":  "string"
-                                                                                                  }
-                                                                                    },
-                                                                           "source":  {
-                                                                                          "type":  "string"
-                                                                                      }
-                                                                       }
-                                                    },
-                                       "RelatedWord":  {
-                                                           "type":  "object",
-                                                           "required":  [
-                                                                            "word"
-                                                                        ],
-                                                           "properties":  {
-                                                                              "word":  {
-                                                                                           "type":  "string"
-                                                                                       },
-                                                                              "sense":  {
-                                                                                            "type":  "string"
-                                                                                        },
-                                                                              "tags":  {
-                                                                                           "type":  "array",
-                                                                                           "items":  {
-                                                                                                         "type":  "string"
-                                                                                                     }
-                                                                                       }
-                                                                          }
-                                                       },
-                                       "LearningGuide":  {
-                                                             "type":  "object",
-                                                             "required":  [
-                                                                              "summary",
-                                                                              "grammar_note",
-                                                                              "examples"
-                                                                          ],
-                                                             "properties":  {
-                                                                                "summary":  {
-                                                                                                "type":  "string"
-                                                                                            },
-                                                                                "grammar_note":  {
-                                                                                                     "type":  "string"
-                                                                                                 },
-                                                                                "formation_rules":  {
-                                                                                                        "type":  "array",
-                                                                                                        "items":  {
-                                                                                                                      "type":  "string"
-                                                                                                                  }
-                                                                                                    },
-                                                                                "patterns":  {
-                                                                                                 "type":  "array",
-                                                                                                 "items":  {
-                                                                                                               "type":  "string"
-                                                                                                           }
-                                                                                             },
-                                                                                "tables":  {
-                                                                                               "type":  "array",
-                                                                                               "items":  {
-                                                                                                             "$ref":  "#/components/schemas/LearningTable"
-                                                                                                         }
-                                                                                           },
-                                                                                "examples":  {
-                                                                                                 "type":  "array",
-                                                                                                 "items":  {
-                                                                                                               "$ref":  "#/components/schemas/LearningExample"
-                                                                                                           }
-                                                                                             }
-                                                                            }
-                                                         },
-                                       "LearningTable":  {
-                                                             "type":  "object",
-                                                             "required":  [
-                                                                              "title",
-                                                                              "forms"
-                                                                          ],
-                                                             "properties":  {
-                                                                                "title":  {
-                                                                                              "type":  "string"
-                                                                                          },
-                                                                                "note":  {
-                                                                                             "type":  "string"
-                                                                                         },
-                                                                                "forms":  {
-                                                                                              "type":  "array",
-                                                                                              "items":  {
-                                                                                                            "$ref":  "#/components/schemas/LearningForm"
-                                                                                                        }
-                                                                                          }
-                                                                            }
-                                                         },
-                                       "LearningForm":  {
-                                                            "type":  "object",
-                                                            "required":  [
-                                                                             "label",
-                                                                             "value"
-                                                                         ],
-                                                            "properties":  {
-                                                                               "label":  {
-                                                                                             "type":  "string"
-                                                                                         },
-                                                                               "value":  {
-                                                                                             "type":  "string"
-                                                                                         }
-                                                                           }
-                                                        },
-                                       "LearningExample":  {
-                                                               "type":  "object",
-                                                               "required":  [
-                                                                                "italian",
-                                                                                "english"
-                                                                            ],
-                                                               "properties":  {
-                                                                                  "italian":  {
-                                                                                                  "type":  "string"
-                                                                                              },
-                                                                                  "english":  {
-                                                                                                  "type":  "string"
-                                                                                              }
-                                                                              }
-                                                           },
-                                       "Error":  {
-                                                     "type":  "object",
-                                                     "required":  [
-                                                                      "error"
-                                                                  ],
-                                                     "properties":  {
-                                                                        "error":  {
-                                                                                      "type":  "object",
-                                                                                      "required":  [
-                                                                                                       "message"
-                                                                                                   ],
-                                                                                      "properties":  {
-                                                                                                         "message":  {
-                                                                                                                         "type":  "string"
-                                                                                                                     }
-                                                                                                     }
-                                                                                  }
-                                                                    }
-                                                 }
-                                   },
-                       "responses":  {
-                                         "Error":  {
-                                                       "description":  "Error response",
-                                                       "content":  {
-                                                                       "application/json":  {
-                                                                                                "schema":  {
-                                                                                                               "$ref":  "#/components/schemas/Error"
-                                                                                                           }
-                                                                                            }
-                                                                   }
-                                                   }
-                                     }
-                   }
+              "known_count": {
+                "type": "integer"
+              },
+              "unknown_count": {
+                "type": "integer"
+              },
+              "due": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "StudySettings": {
+        "type": "object",
+        "required": [
+          "difficulty_target"
+        ],
+        "properties": {
+          "difficulty_target": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "StudyOverview": {
+        "type": "object",
+        "required": [
+          "difficulty_target",
+          "learning",
+          "learned",
+          "due",
+          "review_available",
+          "practiced_24h"
+        ],
+        "properties": {
+          "difficulty_target": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "learning": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "learned": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "due": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "review_available": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "practiced_24h": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "next_review": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
 }

@@ -1,22 +1,22 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Learner-focused Italian dictionary lessons powered by Nodo.">
-  <title>Nodo - Italian Dictionary</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="description" content="Learn Italian vocabulary with adaptive flashcards and instant word lessons.">
+  <title>Nodo - Learn Italian</title>
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark" aria-hidden="true">N</span><span>Nodo</span></div>
-      <div id="account" class="account" hidden><span id="account-name"></span><button id="logout" class="text-button" type="button">Log out</button></div>
+      <div id="account" class="account" hidden><span id="account-name"></span><button id="settings" class="text-button" type="button">Settings</button><button id="logout" class="text-button" type="button">Log out</button></div>
     </header>
     <section id="auth-view" class="auth-card" aria-labelledby="auth-title">
       <p class="eyebrow">Welcome to Nodo</p>
-      <h1 id="auth-title">Sign in to learn Italian</h1>
-      <p class="auth-copy">Look up a word and get a practical lesson built from dictionary evidence.</p>
+      <h1 id="auth-title">Build your Italian vocabulary</h1>
+      <p class="auth-copy">Study words at your level and open a complete lesson whenever you need one.</p>
       <div class="auth-tabs" role="tablist" aria-label="Authentication">
         <button id="login-tab" class="auth-tab active" type="button" role="tab" aria-selected="true">Log in</button>
         <button id="register-tab" class="auth-tab" type="button" role="tab" aria-selected="false">Create account</button>
@@ -31,20 +31,65 @@
         <button id="auth-submit" class="primary" type="submit">Log in</button>
       </form>
     </section>
-    <section id="dictionary-view" class="dictionary" aria-labelledby="dictionary-title" hidden>
-      <p class="eyebrow">Italian learner dictionary</p>
-      <h1 id="dictionary-title">What word do you want to learn?</h1>
-      <form id="word-search-form" class="word-search">
-        <label for="word-search-input">Italian word</label>
-        <div><input id="word-search-input" autocomplete="off" placeholder="e.g. andare" required maxlength="80"><button type="submit">Build lesson</button></div>
-      </form>
-      <div id="lookup-loading" class="state" role="status" hidden><span class="spinner" aria-hidden="true"></span>Building your lesson...</div>
-      <div id="lookup-error" class="state error" role="alert" hidden></div>
-      <div id="lookup-details" class="word-details" hidden></div>
+    <section id="learning-view" class="learning-view" hidden>
+      <nav class="app-nav" aria-label="Learning"><button id="nav-home" class="text-button" type="button">My practice</button><button id="view-learning" class="text-button" type="button">Learning words</button><button id="view-learned" class="text-button" type="button">Learned words</button></nav>
+      <div id="cards-error" class="notice error" role="alert" hidden></div>
+      <div id="cards-loading" class="state" role="status" hidden><span class="spinner" aria-hidden="true"></span><span id="loading-copy">Preparing your practice...</span></div>
+      <section id="study-home" aria-labelledby="learning-title">
+        <div class="learning-intro"><div><p class="eyebrow">A little Italian, every day</p><h1 id="learning-title">Make it part of your vocabulary.</h1><p class="intro-copy">Recall a meaning. Say it in a sentence. Come back until it sticks.</p></div><span class="italian-mark" aria-hidden="true">it.</span></div>
+        <div class="progress-grid" aria-label="Your progress">
+          <div><strong id="stat-practiced">—</strong><span>Practiced in 24 hours</span></div>
+          <div><strong id="stat-learning">—</strong><span>Learning</span></div>
+          <div><strong id="stat-learned">—</strong><span>Learned</span></div>
+        </div>
+        <div class="practice-options">
+          <article class="practice-option"><span class="option-number">01 / DISCOVER</span><h2>Build your vocabulary</h2><p>New words at a comfortable difficulty, mixed with reviews when they’re due.</p><button id="start-lesson" class="primary" type="button">Start learning</button></article>
+          <article class="practice-option review-option"><span class="option-number">02 / REMEMBER</span><h2>Make it stick</h2><p id="review-copy">Revisit words you’ve already practiced. No new words in this session.</p><button id="start-review" class="secondary" type="button">Start review</button></article>
+        </div>
+        <p id="next-review" class="hint"></p>
+        <form id="word-search-form" class="word-search"><label for="word-search-input">Your pocket dictionary</label><div><input id="word-search-input" placeholder="An Italian word you’re curious about..." maxlength="80" required autocomplete="off"><button type="submit">Look up</button></div></form>
+      </section>
+      <section id="flashcard" class="flashcard" aria-labelledby="card-word" hidden>
+        <div class="session-top"><button id="pause-session" class="text-button" type="button">← Save &amp; leave</button><p id="card-progress" class="card-progress"></p></div>
+        <progress id="session-progress" max="20" value="0" aria-label="Session progress"></progress>
+        <div class="card-meta"><span id="card-status" class="card-status"></span><span id="card-difficulty" class="card-pos"></span></div>
+        <p id="card-instruction" class="card-prompt">Can you recall the meaning before revealing it?</p>
+        <h2 id="card-word" class="card-word" lang="it"></h2>
+        <p id="card-pos" class="card-pos"></p>
+        <button id="listen-word" class="text-button" type="button">Listen to pronunciation</button>
+        <button id="reveal-card" class="reveal-card" type="button">Reveal meaning</button>
+        <div id="card-answer" class="card-answer" hidden>
+          <strong id="card-meaning"></strong>
+          <p id="card-grammar" class="card-grammar"></p>
+          <div id="card-example" class="example-focus lesson-block" hidden><p class="lesson-kicker">Say it out loud</p><p id="card-example-it" lang="it" class="example-italian"></p><p id="card-example-en" class="example-translation"></p></div>
+          <p id="lesson-status" class="hint" role="status"></p>
+          <button id="open-lesson" class="text-button" type="button">Explore this word →</button>
+        </div>
+        <div id="answer-actions" hidden><p class="recall-prompt">Did you remember it before revealing?</p><div class="answer-actions"><button id="dont-know" class="again" type="button">Still learning <kbd>1</kbd></button><button id="know" class="primary" type="button">I remembered <kbd>2</kbd></button></div></div>
+        <div id="answer-feedback" class="answer-feedback" role="status" hidden><p id="feedback-copy"></p><button id="next-card" class="primary" type="button">Continue</button></div>
+        <p class="keyboard-hint">Space to reveal · 1 or 2 to answer</p>
+      </section>
+      <section id="session-summary" class="session-summary" aria-labelledby="summary-title" hidden><p class="eyebrow">One step forward</p><h1 id="summary-title">Practice complete</h1><p id="summary-copy"></p><div class="progress-grid"><div><strong id="summary-total"></strong><span>Words practiced</span></div><div><strong id="summary-recalled"></strong><span>Remembered</span></div><div><strong id="summary-missed"></strong><span>To strengthen</span></div></div><p>Remembering takes more than one session. Your next reviews are saved.</p><button id="summary-learning" class="primary" type="button">Explore learning words</button><button id="summary-home" class="text-button" type="button">Back to my practice</button></section>
+      <section id="word-library" class="word-library" aria-labelledby="library-title" hidden><div class="library-heading"><div><p class="eyebrow">Your vocabulary</p><h1 id="library-title"></h1></div><button id="close-library" class="text-button" type="button">Back</button></div><p id="library-copy" class="intro-copy"></p><label class="sr-only" for="library-search">Filter your words</label><input id="library-search" class="library-search" placeholder="Find a word..." type="search"><div id="library-list" class="library-list"></div></section>
     </section>
-    <footer>Learn one word at a time.</footer>
+    <footer>Click an Italian word to open its lesson.</footer>
   </main>
-  <script src="config.js"></script>
-  <script src="app.js" defer></script>
+
+  <dialog id="dictionary-dialog" class="dictionary-dialog" aria-label="Italian word lesson">
+    <button id="close-dictionary" class="dialog-close" type="button" aria-label="Close dictionary">&times;</button>
+    <div id="lookup-loading" class="state" role="status" hidden><span class="spinner" aria-hidden="true"></span>Building your lesson...</div>
+    <div id="lookup-error" class="state error" role="alert" hidden></div>
+    <button id="retry-lesson" class="text-button" type="button" hidden>Retry word lesson</button>
+    <div id="lookup-details" class="word-details" hidden></div>
+  </dialog>
+
+  <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+    <div class="settings-heading"><div><p class="eyebrow">Settings</p><h2 id="settings-title">Your learning pace</h2></div><button id="close-settings" class="dialog-close" type="button" aria-label="Close settings">&times;</button></div>
+    <form id="settings-form"><p class="settings-copy">Start with familiar words or move toward a challenge. The difficulty adjusts gently after your learning sessions.</p><label for="difficulty-target">Vocabulary difficulty <output id="difficulty-value" for="difficulty-target">15</output> / 100</label><input id="difficulty-target" type="range" min="0" max="100" step="1" value="15"><div class="range-labels"><span>Easier</span><span>More challenging</span></div><p class="hint">This is an estimate of word difficulty. Existing sessions keep their saved words.</p><p id="settings-error" class="form-error" role="alert" hidden></p><button id="save-settings" class="primary" type="submit">Save preferences</button></form>
+  </dialog>
+
+  <script src="config.js?v=2"></script>
+  <script src="dictionary-view.js?v=5" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>

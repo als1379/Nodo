@@ -16,6 +16,7 @@ import (
 	"nodo/internal/config"
 	"nodo/internal/database"
 	"nodo/internal/dictionary"
+	"nodo/internal/flashcard"
 	"nodo/internal/server"
 )
 
@@ -39,10 +40,11 @@ func main() {
 	}
 	authService := auth.NewService(db, cfg.SessionTTL, auth.NewJWT(cfg.JWTSecret))
 	openRouterClient := openrouter.New(cfg.OpenRouterAPIKey, cfg.OpenRouterModel, &http.Client{Timeout: 30 * time.Second})
-	dictionaryClient := wiktapi.New(cfg.DictionaryURL, &http.Client{Timeout: 10 * time.Second})
+	wordSource := wiktapi.New(cfg.DictionaryURL, &http.Client{Timeout: 10 * time.Second})
 	teacher := dictionary.NewLearningAgent(openRouterClient)
-	dictionaryService := dictionary.NewDictionary(dictionaryClient, teacher)
-	handler := server.New(auth.NewHTTP(authService), dictionary.NewHTTP(dictionaryService, logger), logger, cfg.FrontendOrigin, func() error { return db.Ping(context.Background()) })
+	dictionaryService := dictionary.NewService(wordSource, teacher, dictionary.NewPostgresLessonCache(db))
+	flashcards := flashcard.NewRepository(db)
+	handler := server.New(auth.NewHTTP(authService), dictionary.NewHTTP(dictionaryService, logger), flashcard.NewHTTP(flashcards, logger), logger, cfg.FrontendOrigin, func() error { return db.Ping(context.Background()) })
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 2 * time.Minute, WriteTimeout: 2 * time.Minute, IdleTimeout: 60 * time.Second}
 	go func() {
 		logger.Info("server started", "address", cfg.HTTPAddr, "environment", cfg.Environment)
